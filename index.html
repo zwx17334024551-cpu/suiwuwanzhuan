@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>随物宛转—23影像曾文翔</title>
+    <style>
+        body { 
+            margin: 0; 
+            background-color: #000; 
+            color: #fff; 
+            overflow: hidden; 
+            font-family: "SimSun", "STSong", "Songti SC", serif; 
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 3D全屏背景容器 */
+        #main-canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* UI交互层 */
+        #ui-layer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 10;
+            pointer-events: none; /* UI层不遮挡3D点击 */
+        }
+
+        #left-zone { flex: 1.2; }
+        #right-zone { 
+            flex: 0.8; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            pointer-events: auto; /* 恢复菜单点击 */
+        }
+
+        /* 数字菜单 */
+        .menu { 
+            display: grid; 
+            grid-template-columns: repeat(2, 140px);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 40px 60px; 
+            text-align: center;
+        }
+
+        .menu a { 
+            color: #aaa; 
+            text-decoration: none; 
+            font-size: 2.8rem; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: block;
+            letter-spacing: 5px;
+        }
+
+        .menu a:hover { color: #ffd700; transform: scale(1.1); }
+
+        /* 底部署名：保持字号加大后的 20px */
+        #footer {
+            position: fixed;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            color: #777;
+            font-size: 20px;
+            letter-spacing: 12px;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-canvas-container"></div>
+
+    <div id="ui-layer">
+        <div id="left-zone"></div>
+        <div id="right-zone">
+            <div class="menu">
+                <a href="view.html?id=1">一</a> <a href="view.html?id=6">六</a>
+                <a href="view.html?id=2">二</a> <a href="view.html?id=7">七</a>
+                <a href="view.html?id=3">三</a> <a href="view.html?id=8">八</a>
+                <a href="view.html?id=4">四</a> <a href="view.html?id=9">九</a>
+                <a href="view.html?id=5">五</a> 
+            </div>
+        </div>
+    </div>
+
+    <div id="footer">23 影像 曾文翔</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+        let scene, camera, renderer, textPoints, buddhaPoints;
+
+        init();
+
+        function init() {
+            const container = document.getElementById('main-canvas-container');
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // 1. 创建文字粒子 (进一步向左偏移)
+            createTextParticles();
+
+            // 2. 加载中心模型 (比例调大)
+            loadCenterModel();
+
+            render();
+        }
+
+        function createTextParticles() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1000; canvas.height = 1000;
+            ctx.fillStyle = "#fff";
+            ctx.font = "140px 'SimSun', 'STSong', serif";
+            ctx.textAlign = "center";
+            
+            const startY = 250;
+            const spacing = 180;
+            ctx.fillText("随", 500, startY);
+            ctx.fillText("物", 500, startY + spacing);
+            ctx.fillText("宛", 500, startY + spacing * 2);
+            ctx.fillText("转", 500, startY + spacing * 3);
+
+            const imageData = ctx.getImageData(0, 0, 1000, 1000);
+            const positions = [];
+            const step = 3;
+
+            for (let y = 0; y < 1000; y += step) {
+                for (let x = 0; x < 1000; x += step) {
+                    const alpha = imageData.data[(y * 1000 + x) * 4 + 3];
+                    if (alpha > 128) {
+                        const jitter = 0.08; 
+                        // x - 1050 这里的偏移量增加，使文字整体向左移动更多
+                        positions.push(
+                            (x - 1050) * 0.009 + (Math.random() - 0.5) * jitter, 
+                            (550 - y) * 0.009 + (Math.random() - 0.5) * jitter, 
+                            (Math.random() - 0.5) * 0.1
+                        );
+                    }
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({ 
+                color: 0xd4af37, size: 0.035, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending 
+            });
+            textPoints = new THREE.Points(geo, mat);
+            scene.add(textPoints);
+        }
+
+        function loadCenterModel() {
+            const loader = new PLYLoader();
+            loader.load('./models/5.ply', (geometry) => {
+                geometry.center();
+                
+                const material = new THREE.PointsMaterial({
+                    color: 0xd4af37,
+                    size: 0.015,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending
+                });
+
+                buddhaPoints = new THREE.Points(geometry, material);
+                
+                // 视角修正：比例从 0.4 提升到 1
+                buddhaPoints.scale.set(1, 1, 1); 
+                buddhaPoints.rotation.x = Math.PI; // 纠正颠倒
+                buddhaPoints.position.set(0, 0, 0); // 绝对中心
+                
+                scene.add(buddhaPoints);
+            });
+        }
+
+        function render() {
+            if (buddhaPoints) {
+                buddhaPoints.rotation.y += 0.005; // 持续自然旋转
+            }
+            renderer.render(scene, camera);
+            requestAnimationFrame(render);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

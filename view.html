@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>佛像点云 - 随物宛转</title>
+    <style>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: "SimSun", "STSong", "Songti SC", serif; }
+        
+        /* 左上角返回按钮 */
+        #back { 
+            position: fixed; top: 25px; left: 30px; color: #aaa; text-decoration: none; 
+            z-index: 1000; border: 1px solid #333; padding: 8px 20px; border-radius: 4px; 
+            background: rgba(0,0,0,0.6); font-size: 20px; transition: 0.3s;
+            font-family: "SimSun", "STSong", "Songti SC", serif;
+        }
+        #back:hover { color: #fff; border-color: #666; }
+
+        /* 顶部提示语：移至右上角 */
+        #top-instruction {
+            position: fixed;
+            top: 30px;
+            right: 60px; /* 固定在右侧 */
+            color: #ccc; 
+            font-size: 32px; 
+            letter-spacing: 10px;
+            font-family: "SimSun", "STSong", "Songti SC", serif;
+            z-index: 100;
+            pointer-events: none;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        /* 底部署名 */
+        #bottom-credit {
+            position: fixed;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #555;
+            font-size: 18px;
+            letter-spacing: 10px;
+            font-family: "SimSun", "STSong", "Songti SC", serif;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* 左侧介绍卡片 */
+        #info-card {
+            position: fixed;
+            top: 20%; 
+            left: 5%;
+            text-align: left;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 1s ease;
+            color: #ffffff;
+            max-width: 380px;
+        }
+        #info-card h1 { font-size: 2.4rem; margin: 0 0 15px 0; letter-spacing: 6px; font-weight: normal; }
+        #info-card .divider { width: 40px; height: 2px; background: #fff; margin-bottom: 20px; opacity: 0.5; }
+        #info-card p { font-size: 1.15rem; line-height: 2; margin: 10px 0; letter-spacing: 2px; white-space: pre-wrap; }
+
+        #status-info { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; font-size: 14px; z-index: 2000; text-align: center; }
+        #video-container { position: fixed; bottom: 15px; right: 15px; width: 100px; height: 75px; border: 1px solid #222; transform: scaleX(-1); border-radius: 4px; overflow: hidden; opacity: 0.15; z-index: 500; background: #111; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body>
+    <div id="status-info">曾文翔就站在这里...</div>
+    <a href="index.html" id="back">回去</a>
+    <div id="top-instruction">尝试伸一下手</div>
+    <div id="bottom-credit">23影像曾文翔</div>
+
+    <div id="info-card">
+        <h1 id="title"></h1>
+        <div class="divider"></div>
+        <div id="content"></div>
+    </div>
+    
+    <div id="video-container"><video id="input_video" playsinline muted></video></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+        const museumData = {
+            "1": ["北齐", "贴金彩绘石像", "线条柔和，嘴角微扬。"],
+            "2": ["北齐", "彩绘石像", "面带微笑，身着袈裟，线条柔和。"],
+            "3": ["北魏", "彩绘石塑像", "线条柔和，身形优雅流畅，薄体贴衣。"],
+            "4": ["北魏", "彩绘石塑像", "线条流畅，多用浅刻。"],
+            "5": ["北朝", "坐佛五尊像", "手部说法印，造型生动，衣纹流畅。"],
+            "6": ["北魏", "比丘道修造弥勒像", "背屏飞天塑像生动，人物流畅。\n但身体造像仍是一板一眼，在山东博物馆看到最大的一尊造像。"],
+            "7": ["石狮塑像", "于灵岩寺。"],
+            "8": ["北齐", "佛头像", "于邺城考古博物馆，充分体现圆润饱满造型，很是可爱。"],
+            "9": ["北齐", "佛头像", "约有两米高，他一直都在微笑。"],
+            "10": ["青州博物馆", "北魏", "龙兴寺遗址出土"]
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const modelId = urlParams.get('id') || '1';
+        const modelPath = `./models/${modelId}.ply`;
+
+        const info = museumData[modelId] || museumData["10"];
+        document.getElementById('title').innerText = info[0];
+        document.getElementById('content').innerHTML = info.slice(1).map(line => `<p>${line}</p>`).join('');
+
+        let scene, camera, renderer, points, geometry, originalPositions;
+        let handData = { x: 0.5, y: 0.5, z: 0, active: false };
+        const baseGold = new THREE.Color(0x7a7055);
+        const activeGold = new THREE.Color(0xffd700);
+
+        initThree();
+        initGestureSystem();
+
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const loader = new PLYLoader();
+            loader.load(modelPath, (geo) => {
+                document.getElementById('status-info').style.display = 'none';
+                geometry = geo;
+                geometry.center();
+                const count = geometry.attributes.position.count;
+                const colors = new Float32Array(count * 3);
+                for (let i = 0; i < count; i++) {
+                    colors[i*3] = baseGold.r; colors[i*3+1] = baseGold.g; colors[i*3+2] = baseGold.b;
+                }
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                const material = new THREE.PointsMaterial({ size: 0.005, vertexColors: true, transparent: true, opacity: 0.8, sizeAttenuation: true });
+                points = new THREE.Points(geometry, material);
+                points.rotation.x = Math.PI; 
+                scene.add(points);
+                originalPositions = geometry.attributes.position.array.slice();
+                const box = new THREE.Box3().setFromObject(points);
+                camera.position.z = box.getSize(new THREE.Vector3()).y * 2.8;
+                animate();
+            });
+        }
+
+        async function initGestureSystem() {
+            const videoElement = document.getElementById('input_video');
+            const checkHands = setInterval(async () => {
+                if (typeof window.Hands !== 'undefined') {
+                    clearInterval(checkHands);
+                    const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+                    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+                    hands.onResults((results) => {
+                        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                            const lm = results.multiHandLandmarks[0];
+                            handData.x = lm[9].x; 
+                            handData.z = Math.hypot(lm[8].x - lm[0].x, lm[8].y - lm[0].y);
+                            handData.active = true;
+                        } else { handData.active = false; }
+                    });
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        videoElement.srcObject = stream;
+                        videoElement.onloadedmetadata = () => {
+                            videoElement.play();
+                            const processFrame = async () => {
+                                if (videoElement.currentTime !== 0) await hands.send({ image: videoElement });
+                                requestAnimationFrame(processFrame);
+                            };
+                            processFrame();
+                        };
+                    } catch (e) { document.getElementById('status-info').innerText = "请允许摄像头权限"; }
+                }
+            }, 500);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!points) return;
+            const pos = geometry.attributes.position.array;
+            const colors = geometry.attributes.color.array;
+            const infoCard = document.getElementById('info-card');
+            
+            if (handData.active) {
+                const targetY = (handData.x - 0.5) * Math.PI * 2;
+                points.rotation.y += (targetY - points.rotation.y) * 0.1;
+            } else { points.rotation.y += 0.005; }
+
+            const power = handData.active ? Math.max(0, (handData.z - 0.28) * 10) : 0;
+            const intensity = Math.min(1, power * 0.3); 
+            if (intensity > 0.1) { infoCard.style.opacity = intensity * 0.7; } else { infoCard.style.opacity = 0; }
+
+            for (let i = 0; i < pos.length; i += 3) {
+                const ox = originalPositions[i], oy = originalPositions[i+1], oz = originalPositions[i+2];
+                if (power > 0.01) {
+                    pos[i] += (ox * (1 + power * 0.5) - pos[i]) * 0.15;
+                    pos[i+1] += (oy * (1 + power * 0.5) - pos[i+1]) * 0.15;
+                    pos[i+2] += (oz * (1 + power * 0.5) - pos[i+2]) * 0.15;
+                } else {
+                    pos[i] += (ox - pos[i]) * 0.1; pos[i+1] += (oy - pos[i+1]) * 0.1; pos[i+2] += (oz - pos[i+2]) * 0.1;
+                }
+                colors[i] = baseGold.r + (activeGold.r - baseGold.r) * intensity;
+                colors[i+1] = baseGold.g + (activeGold.g - baseGold.g) * intensity;
+                colors[i+2] = baseGold.b + (activeGold.b - baseGold.b) * intensity;
+            }
+            geometry.attributes.position.needsUpdate = true;
+            geometry.attributes.color.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
