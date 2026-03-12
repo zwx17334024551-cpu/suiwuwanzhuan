@@ -31,6 +31,7 @@
             display: flex;
             flex-direction: column;
             gap: 25px;
+            align-items: center;
         }
 
         .loading-text span {
@@ -39,10 +40,20 @@
             letter-spacing: 5px;
             opacity: 0;
             transform: translateY(15px);
-            /* 组合动画：1.出现 2.上下浮动 */
             animation: 
                 appear 0.6s forwards,
                 bob 2s infinite ease-in-out alternate;
+        }
+
+        /* 修复网络慢时的焦虑：增加直观的进度百分比 */
+        #loading-progress {
+            font-size: 16px;
+            color: #ffd700;
+            margin-top: 15px;
+            font-family: Arial, sans-serif;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            height: 20px;
         }
 
         @keyframes appear {
@@ -54,7 +65,6 @@
             100% { transform: translateY(-12px); color: #ffd700; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
         }
 
-        /* 依次延迟触发每个字的动画 */
         .loading-text span:nth-child(1) { animation-delay: 0.0s, 0.5s; }
         .loading-text span:nth-child(2) { animation-delay: 0.3s, 0.8s; }
         .loading-text span:nth-child(3) { animation-delay: 0.6s, 1.1s; }
@@ -71,7 +81,7 @@
             z-index: 1;
         }
 
-        /* UI交互层（初始隐藏，等待动画触发） */
+        /* UI交互层 */
         #ui-layer {
             position: relative;
             width: 100%;
@@ -79,7 +89,7 @@
             display: flex;
             z-index: 10;
             pointer-events: none; 
-            opacity: 0; /* 配合开场动画 */
+            opacity: 0; 
             transition: opacity 2s ease-in-out;
         }
 
@@ -123,40 +133,41 @@
             letter-spacing: 12px;
             pointer-events: none;
             z-index: 100;
-            opacity: 0; /* 配合开场动画 */
+            opacity: 0; 
             transition: opacity 2s ease-in-out;
         }
 
-        /* ========== 手机端响应式适配 (左右排版，佛像在上方) ========== */
+        /* ========== 手机端响应式排版优化 ========== */
         @media screen and (max-width: 768px) {
             #ui-layer {
-                flex-direction: row; /* 强制手机端也是左右排版 */
-                align-items: flex-end; /* 菜单靠下放置，留出上方空间给佛像 */
-                padding-bottom: 60px;
+                flex-direction: row; /* 保持左右排版 */
+                align-items: flex-end; /* 内容靠下对齐 */
+                padding-bottom: 90px; /* 给底部留空 */
             }
-            #left-zone { display: block; flex: 1; } /* 左侧占位 */
-            #right-zone { flex: 1; justify-content: flex-end; padding-right: 30px; }
+            #left-zone { flex: 1; display: block; }
+            #right-zone { flex: 1; justify-content: flex-end; padding-right: 35px; }
             
             .menu { 
-                grid-template-columns: repeat(2, 60px); /* 极度压缩菜单间距 */
-                gap: 20px 15px; 
+                grid-template-columns: repeat(2, 60px); 
+                gap: 25px 25px; 
             }
-            .menu a { font-size: 1.6rem; letter-spacing: 2px; }
+            .menu a { font-size: 1.7rem; letter-spacing: 2px; }
             
-            #footer { bottom: 20px; font-size: 12px; letter-spacing: 4px; }
+            #footer { bottom: 25px; font-size: 13px; letter-spacing: 6px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 正在加载中 动画屏 -->
+    <!-- 加载动画屏 -->
     <div id="loading-screen">
-        <div class="loading-text">
+        <div class="loading-text" id="loading-container">
             <span>正</span>
             <span>在</span>
             <span>加</span>
             <span>载</span>
             <span>中</span>
+            <div id="loading-progress">连接中...</div>
         </div>
     </div>
 
@@ -194,7 +205,6 @@
         let textPoints, buddhaPoints;
         let textMaterial, buddhaMaterial;
         
-        // 用于控制渐显的透明度目标值
         let modelOpacityTarget = 0;
         let textOpacityTarget = 0;
 
@@ -212,7 +222,7 @@
             container.appendChild(renderer.domElement);
 
             createTextParticles();
-            loadRandomCenterModel(); // 改为加载随机1-4号模型
+            loadRandomCenterModel(); 
 
             render();
         }
@@ -253,7 +263,6 @@
             const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             
-            // 注意：材质透明度初始设为 0，等待加载完成后渐显
             textMaterial = new THREE.PointsMaterial({ 
                 color: 0xd4af37, size: 0.035, transparent: true, opacity: 0, blending: THREE.AdditiveBlending 
             });
@@ -262,89 +271,95 @@
         }
 
         function loadRandomCenterModel() {
-            // 随机挑选 1 到 4 号模型
-            const randomId = Math.floor(Math.random() * 4) + 1;
+            const randomId = Math.floor(Math.random() * 4) + 1; // 随机 1-4 号
             const loader = new PLYLoader();
             
             loader.load(`./${randomId}.ply`, 
                 (geometry) => {
-                    geometry.center();
+                    document.getElementById('loading-progress').innerText = '即将展现...';
                     
-                    // 动态计算模型大小，确保无论抽到1-4哪个，大小都基本一致
-                    const box = new THREE.Box3().setFromObject(new THREE.Points(geometry));
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const targetScale = 6 / maxDim; // 统一归一化缩放比例
-
-                    // 注意：材质透明度初始设为 0
-                    buddhaMaterial = new THREE.PointsMaterial({
-                        color: 0xd4af37, size: 0.015, transparent: true, opacity: 0, blending: THREE.AdditiveBlending
-                    });
-
-                    buddhaPoints = new THREE.Points(geometry, buddhaMaterial);
-                    buddhaPoints.userData.baseScale = targetScale; // 保存基础缩放供响应式排版使用
-                    buddhaPoints.rotation.x = Math.PI; 
-                    
-                    scene.add(buddhaPoints);
-                    updateResponsiveLayout(); // 加载完进行排版
-                    
-                    // ==============================
-                    // 核心逻辑：播放顺序出场动画
-                    // ==============================
-                    const loadingScreen = document.getElementById('loading-screen');
-                    
-                    // 1. 隐藏加载屏
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
-
-                    // 2. 佛像开始慢慢显现
-                    setTimeout(() => { modelOpacityTarget = 0.9; }, 800);
-
-                    // 3. 佛像出来一会后，慢慢显现粒子文字和UI菜单
+                    // 延迟一点点执行，防止卡顿
                     setTimeout(() => {
-                        textOpacityTarget = 0.9;
-                        document.getElementById('ui-layer').style.opacity = '1';
-                        document.getElementById('footer').style.opacity = '1';
-                    }, 2800);
+                        geometry.center();
+                        const box = new THREE.Box3().setFromObject(new THREE.Points(geometry));
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const targetScale = 6 / maxDim; 
 
-                    // 4. 后台静默预加载其他模型文件，加速后续点击体验
-                    preloadOtherModels(randomId);
+                        buddhaMaterial = new THREE.PointsMaterial({
+                            color: 0xd4af37, size: 0.015, transparent: true, opacity: 0, blending: THREE.AdditiveBlending
+                        });
+
+                        buddhaPoints = new THREE.Points(geometry, buddhaMaterial);
+                        buddhaPoints.userData.baseScale = targetScale; 
+                        buddhaPoints.rotation.x = Math.PI; 
+                        
+                        scene.add(buddhaPoints);
+                        updateResponsiveLayout(); 
+                        
+                        // 开始出场动画
+                        const loadingScreen = document.getElementById('loading-screen');
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
+
+                        setTimeout(() => { modelOpacityTarget = 0.9; }, 800);
+
+                        setTimeout(() => {
+                            textOpacityTarget = 0.9;
+                            document.getElementById('ui-layer').style.opacity = '1';
+                            document.getElementById('footer').style.opacity = '1';
+                        }, 2800);
+
+                        // 安全的静默预加载
+                        safePreloadModels(randomId);
+                    }, 100);
                 },
-                undefined,
+                (xhr) => {
+                    // 增加进度条显示，防止手机端因为下载太慢让用户以为卡死了
+                    if (xhr.lengthComputable) {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        document.getElementById('loading-progress').innerText = percent + '%';
+                    } else {
+                        const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
+                        document.getElementById('loading-progress').innerText = `已加载 ${mb} MB`;
+                    }
+                },
                 (error) => {
                     console.error('模型加载失败:', error);
-                    alert("模型加载失败！请检查根目录下是否有 1.ply ~ 4.ply。");
-                    document.getElementById('loading-screen').style.display = 'none';
-                    document.getElementById('ui-layer').style.opacity = '1';
-                    textOpacityTarget = 0.9;
+                    document.getElementById('loading-progress').innerHTML = `<span style="color:red">加载失败，请刷新重试</span>`;
                 }
             );
         }
 
-        // 后台静默预加载函数（利用浏览器缓存）
-        function preloadOtherModels(excludeId) {
-            for (let i = 1; i <= 9; i++) {
-                if (i === excludeId || i === 5) continue; // 5号太大了尽量不预加载
-                fetch(`./${i}.ply`, { priority: 'low' }).catch(()=>{});
+        // 修改为“队列慢速预加载”，彻底解决并发把手机挤崩溃的问题
+        async function safePreloadModels(excludeId) {
+            // 等待开场动画完全放完 (5秒后)，再开始偷摸摸下载
+            await new Promise(r => setTimeout(r, 5000));
+            const preloadList =[1, 2, 3, 4, 6, 7, 8, 9];
+            
+            for (let i of preloadList) {
+                if (i === excludeId) continue;
+                try {
+                    // 每个模型之间休息 2 秒钟，不抢占手机网络通道
+                    await new Promise(r => setTimeout(r, 2000));
+                    await fetch(`./${i}.ply`);
+                } catch(e) {}
             }
         }
 
-        // 核心：响应式 3D 布局
         function updateResponsiveLayout() {
             const aspect = window.innerWidth / window.innerHeight;
             
             if (aspect < 1) { 
-                // ======= 手机端竖屏 (保持左右排版) =======
-                camera.position.z = 18; 
+                // ======= 手机端竖屏 (更美的左右排版) =======
+                camera.position.z = 24; // 镜头拉远，画面更有留白感
                 if (textPoints) {
-                    // 粒子字挪到左边偏下，配合右侧菜单
-                    textPoints.position.set(-3.5, -2, 0); 
-                    textPoints.scale.set(0.65, 0.65, 0.65); // 缩小字号
+                    textPoints.position.set(-4, -2.5, 0); // 居左下
+                    textPoints.scale.set(0.7, 0.7, 0.7); 
                 }
                 if (buddhaPoints) {
-                    // 佛像挪到屏幕正中偏上方，不阻挡文字和菜单
-                    buddhaPoints.position.set(0, 4.5, 0); 
-                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); // 手机端稍微放大点模型
+                    buddhaPoints.position.set(0, 6, 0); // 佛像往上托起
+                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.15); 
                 }
             } else { 
                 // ======= 电脑端横屏 =======
@@ -361,20 +376,9 @@
         }
 
         function render() {
-            // 佛像持续旋转
-            if (buddhaPoints) {
-                buddhaPoints.rotation.y += 0.005; 
-            }
-            
-            // 处理佛像渐显平滑动画
-            if (buddhaMaterial && buddhaMaterial.opacity < modelOpacityTarget) {
-                buddhaMaterial.opacity += 0.005; 
-            }
-            
-            // 处理粒子字渐显平滑动画
-            if (textMaterial && textMaterial.opacity < textOpacityTarget) {
-                textMaterial.opacity += 0.005; 
-            }
+            if (buddhaPoints) { buddhaPoints.rotation.y += 0.005; }
+            if (buddhaMaterial && buddhaMaterial.opacity < modelOpacityTarget) { buddhaMaterial.opacity += 0.005; }
+            if (textMaterial && textMaterial.opacity < textOpacityTarget) { textMaterial.opacity += 0.005; }
 
             renderer.render(scene, camera);
             requestAnimationFrame(render);
