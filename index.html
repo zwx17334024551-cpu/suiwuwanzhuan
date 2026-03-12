@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>随物宛转—23影像曾文翔</title>
     <style>
         body { 
@@ -63,7 +64,7 @@
 
         .menu a:hover { color: #ffd700; transform: scale(1.1); }
 
-        /* 底部署名：保持字号加大后的 20px */
+        /* 底部署名 */
         #footer {
             position: fixed;
             bottom: 40px;
@@ -74,6 +75,29 @@
             letter-spacing: 12px;
             pointer-events: none;
             z-index: 100;
+        }
+
+        /* ========== 手机端响应式适配 ========== */
+        @media screen and (max-width: 768px) {
+            #ui-layer {
+                flex-direction: column;
+                justify-content: flex-end; /* 手机端菜单靠下放置 */
+                padding-bottom: 120px;
+            }
+            #left-zone { display: none; } /* 手机端不需要左侧占位 */
+            #right-zone { flex: none; height: auto; }
+            
+            .menu { 
+                grid-template-columns: repeat(2, 100px); /* 缩小列宽 */
+                gap: 20px 40px; /* 缩小间距 */
+            }
+            .menu a { font-size: 2rem; } /* 缩小字号 */
+            
+            #footer {
+                bottom: 20px;
+                font-size: 14px;
+                letter-spacing: 8px;
+            }
         }
     </style>
 </head>
@@ -118,17 +142,18 @@
             scene = new THREE.Scene();
             
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 10;
-
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            // 解决高分屏模糊问题
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
             container.appendChild(renderer.domElement);
 
-            // 1. 创建文字粒子 (进一步向左偏移)
             createTextParticles();
-
-            // 2. 加载中心模型 (比例调大)
             loadCenterModel();
+
+            // 首次加载时调整布局
+            updateResponsiveLayout();
 
             render();
         }
@@ -149,7 +174,7 @@
             ctx.fillText("转", 500, startY + spacing * 3);
 
             const imageData = ctx.getImageData(0, 0, 1000, 1000);
-            const positions = [];
+            const positions =[];
             const step = 3;
 
             for (let y = 0; y < 1000; y += step) {
@@ -157,9 +182,9 @@
                     const alpha = imageData.data[(y * 1000 + x) * 4 + 3];
                     if (alpha > 128) {
                         const jitter = 0.08; 
-                        // x - 1050 这里的偏移量增加，使文字整体向左移动更多
+                        // 保持居中偏移，配合后续响应式位移
                         positions.push(
-                            (x - 1050) * 0.009 + (Math.random() - 0.5) * jitter, 
+                            (x - 500) * 0.009 + (Math.random() - 0.5) * jitter, 
                             (550 - y) * 0.009 + (Math.random() - 0.5) * jitter, 
                             (Math.random() - 0.5) * 0.1
                         );
@@ -178,26 +203,63 @@
 
         function loadCenterModel() {
             const loader = new PLYLoader();
-            loader.load('./models/5.ply', (geometry) => {
-                geometry.center();
-                
-                const material = new THREE.PointsMaterial({
-                    color: 0xd4af37,
-                    size: 0.015,
-                    transparent: true,
-                    opacity: 0.9,
-                    blending: THREE.AdditiveBlending
-                });
+            
+            // 【修改点】：去掉了 /models 文件夹路径，直接读取同级的 ./5.ply
+            loader.load('./5.ply', 
+                (geometry) => {
+                    geometry.center();
+                    
+                    const material = new THREE.PointsMaterial({
+                        color: 0xd4af37,
+                        size: 0.015,
+                        transparent: true,
+                        opacity: 0.9,
+                        blending: THREE.AdditiveBlending
+                    });
 
-                buddhaPoints = new THREE.Points(geometry, material);
-                
-                // 视角修正：比例从 0.4 提升到 1
-                buddhaPoints.scale.set(1, 1, 1); 
-                buddhaPoints.rotation.x = Math.PI; // 纠正颠倒
-                buddhaPoints.position.set(0, 0, 0); // 绝对中心
-                
-                scene.add(buddhaPoints);
-            });
+                    buddhaPoints = new THREE.Points(geometry, material);
+                    buddhaPoints.scale.set(1, 1, 1); 
+                    buddhaPoints.rotation.x = Math.PI; 
+                    
+                    scene.add(buddhaPoints);
+                    // 模型加载完后再排一次版
+                    updateResponsiveLayout(); 
+                },
+                (xhr) => {
+                    // 可以取消注释下面这行在控制台看加载进度
+                    // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                (error) => {
+                    console.error('模型加载失败:', error);
+                    // 【修改点】：报错提示也更新了
+                    alert("模型加载失败！请检查：\n1. 根目录下是否有 5.ply 文件。\n2. 文件名是否严格小写。");
+                }
+            );
+        }
+
+        // 核心：响应式 3D 布局，根据屏幕比例移动文字和佛像
+        function updateResponsiveLayout() {
+            const aspect = window.innerWidth / window.innerHeight;
+            
+            if (aspect < 1) { 
+                // ======= 手机端竖屏 =======
+                camera.position.z = 18; // 镜头拉远，防止截断
+                if (textPoints) {
+                    textPoints.position.set(0, 4, 0); // 文字移到上方
+                }
+                if (buddhaPoints) {
+                    buddhaPoints.position.set(0, -1, 0); // 佛像移到下方中间
+                }
+            } else { 
+                // ======= 电脑端横屏 =======
+                camera.position.z = 10; // 恢复正常镜头
+                if (textPoints) {
+                    textPoints.position.set(-5, 0, 0); // 文字向左移
+                }
+                if (buddhaPoints) {
+                    buddhaPoints.position.set(0, 0, 0); // 佛像绝对居中
+                }
+            }
         }
 
         function render() {
@@ -212,6 +274,8 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            // 每次窗口变化重新调整 3D 布局
+            updateResponsiveLayout();
         });
     </script>
 </body>
