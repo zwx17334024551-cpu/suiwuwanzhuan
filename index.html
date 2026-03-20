@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>随物宛转</title>
+    <title>随物宛转 - 曾文翔</title>
     <style>
         body { 
             margin: 0; 
@@ -16,7 +16,7 @@
             width: 100vw;
         }
 
-        /* ================== 禅意抽象加载屏 ================== */
+        /* ================== 禅意变色粒子加载屏 ================== */
         #loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -27,10 +27,18 @@
             align-items: center;
             z-index: 9999;
             transition: opacity 1.5s ease-in-out;
-            backdrop-filter: blur(5px); /* 隐约的毛玻璃感 */
+            overflow: hidden;
         }
 
-        /* 抽象几何加载动画容器 */
+        /* 背景变色粒子层 */
+        #loading-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         .zen-loader {
             position: relative;
             width: 100px;
@@ -39,47 +47,42 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 40px;
+            z-index: 2; /* 确保在粒子之上 */
         }
 
-        /* 外层：虚线点阵环（正向慢速旋转） */
         .zen-loader .ring-outer {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             border-radius: 50%;
             border: 1.5px dashed rgba(212, 175, 55, 0.4);
-            animation: spin 12s linear infinite;
+            animation: spin 15s linear infinite;
         }
 
-        /* 内层：实线残缺环（反向中速旋转） */
         .zen-loader .ring-inner {
             position: absolute;
-            width: 65%;
-            height: 65%;
+            width: 65%; height: 65%;
             border-radius: 50%;
             border: 1px solid transparent;
             border-top-color: rgba(255, 255, 255, 0.5);
             border-bottom-color: rgba(212, 175, 55, 0.8);
-            animation: spin-reverse 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            animation: spin-reverse 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
-        /* 核心：发光呼吸点（色彩微变） */
         .zen-loader .core {
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             background-color: #d4af37;
             border-radius: 50%;
             box-shadow: 0 0 10px #d4af37, 0 0 25px #d4af37;
             animation: breathe 2.5s ease-in-out infinite alternate;
         }
 
-        /* 科技感进度数字 */
         #loading-progress {
-            font-family: 'Courier New', Courier, monospace; /* 替换为等宽科技字体 */
+            font-family: 'Courier New', Courier, monospace; 
             font-size: 14px;
             color: rgba(212, 175, 55, 0.8);
             letter-spacing: 6px;
             font-weight: 300;
+            z-index: 2;
             animation: pulse-text 2s infinite alternate;
         }
 
@@ -87,17 +90,16 @@
         @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
         @keyframes breathe {
             0% { transform: scale(0.5); opacity: 0.4; filter: hue-rotate(0deg); }
-            100% { transform: scale(1.5); opacity: 1; filter: hue-rotate(20deg); box-shadow: 0 0 20px #fff, 0 0 40px #d4af37; }
+            100% { transform: scale(1.5); opacity: 1; filter: hue-rotate(30deg); box-shadow: 0 0 20px #fff, 0 0 40px #d4af37; }
         }
         @keyframes pulse-text {
             0% { opacity: 0.4; text-shadow: none; }
             100% { opacity: 1; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
         }
 
-        /* ================== 3D 画布 ================== */
+        /* ================== 主画布与 UI 层 ================== */
         #main-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
 
-        /* ================== UI 交互层 ================== */
         #ui-layer {
             position: relative;
             width: 100%; height: 100%;
@@ -109,80 +111,33 @@
         }
 
         #left-zone { flex: 1.2; }
-        #right-zone { 
-            flex: 0.8; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            pointer-events: auto; 
-        }
+        #right-zone { flex: 0.8; display: flex; justify-content: center; align-items: center; pointer-events: auto; }
 
-        .menu { 
-            display: grid; 
-            grid-template-columns: repeat(2, 140px);
-            grid-template-rows: repeat(5, 1fr);
-            gap: 40px 60px; 
-            text-align: center;
-        }
-
-        .menu a { 
-            color: #aaa; 
-            text-decoration: none; 
-            font-size: 2.8rem; 
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            display: block;
-            letter-spacing: 5px;
-        }
-
+        .menu { display: grid; grid-template-columns: repeat(2, 140px); grid-template-rows: repeat(5, 1fr); gap: 40px 60px; text-align: center; }
+        .menu a { color: #aaa; text-decoration: none; font-size: 2.8rem; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: block; letter-spacing: 5px; }
         .menu a:hover { color: #ffd700; transform: scale(1.15); text-shadow: 0 0 15px rgba(255,215,0,0.6); }
 
         #footer {
-            position: fixed;
-            bottom: 40px;
-            width: 100%;
-            text-align: center;
-            color: #444;
-            font-size: 16px;
-            letter-spacing: 15px;
-            pointer-events: none;
-            z-index: 100;
-            opacity: 0; 
-            transition: opacity 3s ease-in-out;
+            position: fixed; bottom: 40px; width: 100%; text-align: center;
+            color: #444; font-size: 16px; letter-spacing: 15px; pointer-events: none; z-index: 100; opacity: 0; transition: opacity 3s ease-in-out;
         }
 
-        /* ================== 移动端极致美化排版 ================== */
+        /* ================== 移动端美化排版 ================== */
         @media screen and (max-width: 768px) {
-            #ui-layer {
-                flex-direction: row; 
-                align-items: center; 
-                padding-top: 15%; 
-            }
+            #ui-layer { flex-direction: row; align-items: center; padding-top: 15%; }
             #left-zone { flex: 1; display: block; } 
-            #right-zone { 
-                flex: 1; 
-                justify-content: flex-end; 
-                padding-right: 40px; 
-            }
-            .menu { 
-                grid-template-columns: repeat(2, 60px); 
-                gap: 45px 35px; /* 数字间距拉大，更透气 */
-            }
-            .menu a { 
-                font-size: 2rem; 
-                color: #bbb; 
-            }
-            #footer { 
-                bottom: 25px; 
-                font-size: 11px; 
-                letter-spacing: 10px; 
-            }
+            #right-zone { flex: 1; justify-content: flex-end; padding-right: 40px; }
+            .menu { grid-template-columns: repeat(2, 60px); gap: 45px 35px; }
+            .menu a { font-size: 2rem; color: #bbb; }
+            #footer { bottom: 25px; font-size: 11px; letter-spacing: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 纯抽象加载动画 -->
+    <!-- 带有变色粒子的加载屏 -->
     <div id="loading-screen">
+        <canvas id="loading-particles"></canvas>
         <div class="zen-loader">
             <div class="ring-outer"></div>
             <div class="ring-inner"></div>
@@ -211,7 +166,6 @@
     <!-- 底部 -->
     <div id="footer">23 影像 曾文翔</div>
 
-    <!-- 已经修复的、绝对稳定且兼容的 CDN 路径 -->
     <script type="importmap">
         {
             "imports": {
@@ -228,16 +182,67 @@
         let scene, camera, renderer;
         let textPoints, buddhaPoints;
         let textMaterial, buddhaMaterial;
-        
         let modelOpacityTarget = 0;
         let textOpacityTarget = 0;
+
+        // --- 加载界面的变色粒子系统 ---
+        let particleAnimId;
+        function initLoadingParticles() {
+            const canvas = document.getElementById('loading-particles');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            for(let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: Math.random() * -1 - 0.2, // 向上飘动
+                    hue: 40 + Math.random() * 20, // 金色基础色
+                    life: Math.random()
+                });
+            }
+
+            let time = 0;
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                time += 0.01;
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life += 0.01;
+
+                    // 循环边界
+                    if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
+                    
+                    // 颜色随时间渐变，产生流光溢彩的禅意感
+                    const currentHue = (p.hue + Math.sin(time + p.life) * 30) % 360;
+                    const alpha = Math.abs(Math.sin(p.life * Math.PI)); // 呼吸闪烁
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${currentHue}, 70%, 60%, ${alpha})`;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = `hsla(${currentHue}, 70%, 50%, ${alpha})`;
+                    ctx.fill();
+                });
+
+                particleAnimId = requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+        }
+        initLoadingParticles();
+        // ---------------------------------
 
         init();
 
         function init() {
             const container = document.getElementById('main-canvas-container');
             scene = new THREE.Scene();
-            
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -247,7 +252,6 @@
 
             createTextParticles();
             loadRandomCenterModel(); 
-
             render();
         }
 
@@ -287,9 +291,7 @@
             const geo = new THREE.BufferGeometry();
             geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             
-            textMaterial = new THREE.PointsMaterial({ 
-                color: 0xd4af37, size: 0.035, transparent: true, opacity: 0, blending: THREE.AdditiveBlending 
-            });
+            textMaterial = new THREE.PointsMaterial({ color: 0xd4af37, size: 0.035, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
             textPoints = new THREE.Points(geo, textMaterial);
             scene.add(textPoints);
         }
@@ -298,9 +300,9 @@
             const randomId = Math.floor(Math.random() * 4) + 1; 
             const loader = new PLYLoader();
             
-            loader.load(`./models/${randomId}.ply`, 
+            // 已修复：去除了 /models/，直接读取根目录文件
+            loader.load(`./${randomId}.ply`, 
                 (geometry) => {
-                    // 加载完成时，让数字变成类似 100.00 的形态
                     document.getElementById('loading-progress').innerText = '100%';
                     
                     setTimeout(() => {
@@ -321,20 +323,24 @@
                         scene.add(buddhaPoints);
                         updateResponsiveLayout(); 
                         
-                        // 优雅淡出加载屏
+                        // 淡出加载屏并停止粒子动画节省性能
                         const loadingScreen = document.getElementById('loading-screen');
                         loadingScreen.style.opacity = '0';
-                        setTimeout(() => { loadingScreen.style.display = 'none'; }, 1500);
+                        setTimeout(() => { 
+                            loadingScreen.style.display = 'none'; 
+                            cancelAnimationFrame(particleAnimId); 
+                        }, 1500);
 
-                        // 佛像先亮起
                         setTimeout(() => { modelOpacityTarget = 0.85; }, 500);
 
-                        // UI和文字最后亮起
                         setTimeout(() => {
                             textOpacityTarget = 0.9;
                             document.getElementById('ui-layer').style.opacity = '1';
                             document.getElementById('footer').style.opacity = '1';
                         }, 2000);
+
+                        // 恢复你原版的预加载功能！(加入安全延迟，保证主屏流畅)
+                        safePreloadModels(randomId);
 
                     }, 200);
                 },
@@ -354,42 +360,39 @@
             );
         }
 
+        // ================== 完全恢复你的静默预加载逻辑 ==================
+        async function safePreloadModels(excludeId) {
+            // 等待主场景开场动画放完 (5秒后)，再开始偷摸摸下载其他文件，绝不影响体验
+            await new Promise(r => setTimeout(r, 5000));
+            const preloadList = [1, 2, 3, 4, 6, 7, 8, 9];
+            
+            for (let i of preloadList) {
+                if (i === excludeId) continue;
+                try {
+                    // 每个模型之间休息 1.5 秒钟，防止并发挤爆手机网络
+                    await new Promise(r => setTimeout(r, 1500));
+                    await fetch(`./${i}.ply`);
+                } catch(e) {}
+            }
+        }
+
         function updateResponsiveLayout() {
             const aspect = window.innerWidth / window.innerHeight;
-            
             if (aspect < 1) { 
-                // ================= 手机端排版重构 =================
                 camera.position.z = 24; 
-                if (textPoints) {
-                    // 把“随物宛转”往上提，并放大 1.4倍！视觉效果更震撼
-                    textPoints.position.set(-6, 2, 0); 
-                    textPoints.scale.set(1.4, 1.4, 1.4); 
-                }
-                if (buddhaPoints) {
-                    // 佛像往上提一点，避开中间的文字菜单
-                    buddhaPoints.position.set(0, 4.5, 0); 
-                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); 
-                }
+                if (textPoints) { textPoints.position.set(-6, 2, 0); textPoints.scale.set(1.4, 1.4, 1.4); }
+                if (buddhaPoints) { buddhaPoints.position.set(0, 4.5, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); }
             } else { 
-                // ================= 电脑端保持原样 =================
                 camera.position.z = 10; 
-                if (textPoints) {
-                    textPoints.position.set(-5, 0, 0); 
-                    textPoints.scale.set(1, 1, 1);
-                }
-                if (buddhaPoints) {
-                    buddhaPoints.position.set(0, 0, 0); 
-                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale);
-                }
+                if (textPoints) { textPoints.position.set(-5, 0, 0); textPoints.scale.set(1, 1, 1); }
+                if (buddhaPoints) { buddhaPoints.position.set(0, 0, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale); }
             }
         }
 
         function render() {
             if (buddhaPoints) { buddhaPoints.rotation.y += 0.003; } 
-            
             if (buddhaMaterial && buddhaMaterial.opacity < modelOpacityTarget) { buddhaMaterial.opacity += 0.005; }
             if (textMaterial && textMaterial.opacity < textOpacityTarget) { textMaterial.opacity += 0.005; }
-
             renderer.render(scene, camera);
             requestAnimationFrame(render);
         }
@@ -398,6 +401,9 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            // 这里也恢复了粒子加载屏的 resize 重绘
+            const loadCanvas = document.getElementById('loading-particles');
+            if(loadCanvas) { loadCanvas.width = window.innerWidth; loadCanvas.height = window.innerHeight; }
             updateResponsiveLayout();
         });
     </script>
