@@ -7,79 +7,55 @@
     <style>
         body { margin: 0; background-color: #000; overflow: hidden; font-family: "SimSun", "STSong", "Songti SC", serif; }
         
-        /* 左上角返回按钮 */
+        /* 左上角返回按钮 - 改为游标样式 */
         #back { 
             position: fixed; top: 25px; left: 30px; color: #aaa; text-decoration: none; 
             z-index: 1000; border: 1px solid #333; padding: 8px 20px; border-radius: 4px; 
             background: rgba(0,0,0,0.6); font-size: 20px; transition: 0.3s;
             font-family: "SimSun", "STSong", "Songti SC", serif;
+            cursor: pointer; /* 鼠标放上去变小手 */
         }
         #back:hover { color: #fff; border-color: #666; }
 
-        /* 顶部提示语：移至右上角 */
+        /* 顶部提示语 */
         #top-instruction {
-            position: fixed;
-            top: 30px;
-            right: 60px; /* 固定在右侧 */
-            color: #ccc; 
-            font-size: 32px; 
-            letter-spacing: 10px;
-            font-family: "SimSun", "STSong", "Songti SC", serif;
-            z-index: 100;
-            pointer-events: none;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            position: fixed; top: 30px; right: 60px; color: #ccc; 
+            font-size: 32px; letter-spacing: 10px; z-index: 100;
+            pointer-events: none; text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
 
         /* 底部署名 */
         #bottom-credit {
-            position: fixed;
-            bottom: 35px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #555;
-            font-size: 18px;
-            letter-spacing: 10px;
-            font-family: "SimSun", "STSong", "Songti SC", serif;
-            z-index: 100;
-            pointer-events: none;
+            position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%);
+            color: #555; font-size: 18px; letter-spacing: 10px; z-index: 100; pointer-events: none;
         }
 
         /* 左侧介绍卡片 */
         #info-card {
-            position: fixed;
-            top: 20%; 
-            left: 5%;
-            text-align: left;
-            pointer-events: none;
-            z-index: 50;
-            opacity: 0;
-            transition: opacity 1s ease;
-            color: #ffffff;
-            max-width: 380px;
-            text-shadow: 1px 1px 5px rgba(0,0,0,0.8); /* 增加阴影防止看不清 */
+            position: fixed; top: 20%; left: 5%; text-align: left; pointer-events: none;
+            z-index: 50; opacity: 0; transition: opacity 1s ease; color: #ffffff;
+            max-width: 380px; text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
         }
         #info-card h1 { font-size: 2.4rem; margin: 0 0 15px 0; letter-spacing: 6px; font-weight: normal; }
         #info-card .divider { width: 40px; height: 2px; background: #fff; margin-bottom: 20px; opacity: 0.5; }
         #info-card p { font-size: 1.15rem; line-height: 2; margin: 10px 0; letter-spacing: 2px; white-space: pre-wrap; }
 
-        #status-info { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #888; font-size: 16px; z-index: 2000; text-align: center; width: 80%; }
+        /* ======== 优化后的加载状态区 ======== */
+        #status-container {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; z-index: 2000; color: #888;
+        }
+        #status-text { font-size: 18px; letter-spacing: 5px; margin-bottom: 15px; color: #d4af37;}
+        #load-percent { font-family: 'Courier New', Courier, monospace; font-size: 16px; color: #aaa; letter-spacing: 2px;}
+
         #video-container { position: fixed; bottom: 15px; right: 15px; width: 100px; height: 75px; border: 1px solid #222; transform: scaleX(-1); border-radius: 4px; overflow: hidden; opacity: 0.15; z-index: 500; background: #111; }
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* ========== 手机端响应式适配 ========== */
         @media screen and (max-width: 768px) {
             #back { top: 15px; left: 15px; font-size: 16px; padding: 6px 15px; }
             #top-instruction { font-size: 18px; top: 22px; right: 20px; letter-spacing: 4px; }
             #bottom-credit { font-size: 14px; bottom: 20px; letter-spacing: 6px; }
-            
-            /* 手机端信息卡片移到下方，防止挡住模型脸部 */
-            #info-card {
-                top: auto;
-                bottom: 120px;
-                left: 20px;
-                right: 20px;
-                max-width: none;
-            }
+            #info-card { top: auto; bottom: 120px; left: 20px; right: 20px; max-width: none; }
             #info-card h1 { font-size: 1.8rem; margin-bottom: 10px; }
             #info-card p { font-size: 1rem; line-height: 1.6; }
             #video-container { width: 80px; height: 60px; bottom: 10px; right: 10px; }
@@ -87,8 +63,16 @@
     </style>
 </head>
 <body>
-    <div id="status-info">曾文翔就站在这里...<br><span style="font-size:12px;opacity:0.6;">(正在加载模型与摄像头组件)</span></div>
-    <a href="index.html" id="back">回去</a>
+    
+    <!-- 优化后的加载提示 -->
+    <div id="status-container">
+        <div id="status-text">曾文翔就站在这里...</div>
+        <div id="load-percent">感知连接中...</div>
+    </div>
+
+    <!-- 魔法返回按钮：调用 JS 函数进行内存返回 -->
+    <a onclick="goBack()" id="back">回去</a>
+    
     <div id="top-instruction">尝试伸一下手</div>
     <div id="bottom-credit">23影像曾文翔</div>
 
@@ -115,6 +99,15 @@
         import * as THREE from 'three';
         import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
+        // BFCache 内存瞬间返回魔法
+        window.goBack = function() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        };
+
         const museumData = {
             "1": ["北齐", "贴金彩绘石像", "线条柔和，嘴角微扬。"],
             "2":["北齐", "彩绘石像", "面带微笑，身着袈裟，线条柔和。"],
@@ -130,8 +123,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const modelId = urlParams.get('id') || '1';
-        
-        // 【修改点】：去掉了 /models/ 文件夹层级，直接读取根目录的 ply
         const modelPath = `./${modelId}.ply`;
 
         const info = museumData[modelId] || museumData["10"];
@@ -139,7 +130,7 @@
         document.getElementById('content').innerHTML = info.slice(1).map(line => `<p>${line}</p>`).join('');
 
         let scene, camera, renderer, points, geometry, originalPositions;
-        let baseCameraZ = 0; // 用于存储响应式相机基础距离
+        let baseCameraZ = 0; 
         let handData = { x: 0.5, y: 0.5, z: 0, active: false };
         const baseGold = new THREE.Color(0x7a7055);
         const activeGold = new THREE.Color(0xffd700);
@@ -153,14 +144,16 @@
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 高分屏抗锯齿
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
             document.body.appendChild(renderer.domElement);
 
             const loader = new PLYLoader();
             loader.load(
                 modelPath, 
                 (geo) => {
-                    document.getElementById('status-info').style.display = 'none';
+                    // 加载成功后隐藏提示文字
+                    document.getElementById('status-container').style.display = 'none';
+                    
                     geometry = geo;
                     geometry.center();
                     const count = geometry.attributes.position.count;
@@ -176,37 +169,45 @@
                     
                     originalPositions = geometry.attributes.position.array.slice();
                     
-                    // 计算模型大小以适配相机距离
                     const box = new THREE.Box3().setFromObject(points);
                     baseCameraZ = box.getSize(new THREE.Vector3()).y * 2.8;
-                    updateResponsiveLayout(); // 加载完后自动排版
+                    updateResponsiveLayout(); 
                     
                     animate();
                 },
-                undefined, // progress 不处理
+                // 加入进度反馈！
+                (xhr) => {
+                    if (xhr.lengthComputable) {
+                        const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
+                        document.getElementById('load-percent').innerText = '模型凝聚进度: ' + percentComplete + '%';
+                    } else {
+                        const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
+                        document.getElementById('load-percent').innerText = '已接收 ' + mb + ' MB';
+                    }
+                },
                 (error) => {
                     console.error('模型加载失败:', error);
-                    document.getElementById('status-info').innerHTML = `模型 ${modelId}.ply 加载失败。<br>请检查 GitHub 仓库同级目录下是否有该文件。`;
+                    document.getElementById('status-text').innerText = "造像唤醒失败";
+                    document.getElementById('load-percent').innerHTML = `<span style="color:#ff6b6b">网络连接超时，请开VPN或刷新</span>`;
                 }
             );
         }
 
-        // 响应式相机自适应：竖屏时相机自动拉远，避免截断
         function updateResponsiveLayout() {
             if (!camera || baseCameraZ === 0) return;
             const aspect = window.innerWidth / window.innerHeight;
             if (aspect < 1) {
-                // 手机竖屏：镜头拉远 1.6 倍
                 camera.position.z = baseCameraZ * 1.6;
             } else {
-                // 电脑横屏：标准距离
                 camera.position.z = baseCameraZ;
             }
         }
 
         async function initGestureSystem() {
             const videoElement = document.getElementById('input_video');
+            let attemptCount = 0;
             const checkHands = setInterval(async () => {
+                attemptCount++;
                 if (typeof window.Hands !== 'undefined') {
                     clearInterval(checkHands);
                     const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
@@ -231,10 +232,13 @@
                             processFrame();
                         };
                     } catch (e) { 
-                        // 如果用户拒绝授权，仅改变字样，不影响 3D 旋转展示
                         document.getElementById('top-instruction').innerText = "未获取摄像头权限"; 
                         document.getElementById('top-instruction').style.opacity = "0.5";
                     }
+                } else if (attemptCount > 20) {
+                    // 如果一直连不上国外的 JS 库，停止尝试，防止卡死
+                    clearInterval(checkHands);
+                    console.warn("手势组件加载失败，可能是网络问题。但不影响3D模型展示。");
                 }
             }, 500);
         }
@@ -277,7 +281,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            updateResponsiveLayout(); // 窗口调整时更新相机距离
+            updateResponsiveLayout(); 
         });
     </script>
 </body>
