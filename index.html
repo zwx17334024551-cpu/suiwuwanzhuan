@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>随物宛转 - 曾文翔</title>
     <style>
-        /* 引入优雅的宋体作为全局字体 */
         body { 
             margin: 0; 
             background-color: #000; 
@@ -17,54 +16,83 @@
             width: 100vw;
         }
 
-        /* ================== 加载动画层 ================== */
+        /* ================== 禅意抽象加载屏 ================== */
         #loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: #000;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
             transition: opacity 1.5s ease-in-out;
+            backdrop-filter: blur(5px); /* 隐约的毛玻璃感 */
         }
 
-        .loading-text {
+        /* 抽象几何加载动画容器 */
+        .zen-loader {
+            position: relative;
+            width: 100px;
+            height: 100px;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            justify-content: center;
             align-items: center;
+            margin-bottom: 40px;
         }
 
-        .loading-text span {
-            font-size: 26px;
-            color: #fff;
-            letter-spacing: 8px;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: appear 0.8s forwards, bob 2.5s infinite ease-in-out alternate;
+        /* 外层：虚线点阵环（正向慢速旋转） */
+        .zen-loader .ring-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(212, 175, 55, 0.4);
+            animation: spin 12s linear infinite;
         }
 
+        /* 内层：实线残缺环（反向中速旋转） */
+        .zen-loader .ring-inner {
+            position: absolute;
+            width: 65%;
+            height: 65%;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            border-top-color: rgba(255, 255, 255, 0.5);
+            border-bottom-color: rgba(212, 175, 55, 0.8);
+            animation: spin-reverse 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* 核心：发光呼吸点（色彩微变） */
+        .zen-loader .core {
+            width: 8px;
+            height: 8px;
+            background-color: #d4af37;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #d4af37, 0 0 25px #d4af37;
+            animation: breathe 2.5s ease-in-out infinite alternate;
+        }
+
+        /* 科技感进度数字 */
         #loading-progress {
+            font-family: 'Courier New', Courier, monospace; /* 替换为等宽科技字体 */
             font-size: 14px;
-            color: #d4af37;
-            margin-top: 20px;
-            font-family: Arial, sans-serif;
-            letter-spacing: 4px;
-            opacity: 0.8;
-            height: 20px;
+            color: rgba(212, 175, 55, 0.8);
+            letter-spacing: 6px;
+            font-weight: 300;
+            animation: pulse-text 2s infinite alternate;
         }
 
-        @keyframes appear { to { opacity: 1; transform: translateY(0); } }
-        @keyframes bob {
-            0% { transform: translateY(0); color: #666; text-shadow: none; }
-            100% { transform: translateY(-8px); color: #ffd700; text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+        @keyframes breathe {
+            0% { transform: scale(0.5); opacity: 0.4; filter: hue-rotate(0deg); }
+            100% { transform: scale(1.5); opacity: 1; filter: hue-rotate(20deg); box-shadow: 0 0 20px #fff, 0 0 40px #d4af37; }
         }
-
-        .loading-text span:nth-child(1) { animation-delay: 0.0s, 0.5s; }
-        .loading-text span:nth-child(2) { animation-delay: 0.2s, 0.7s; }
-        .loading-text span:nth-child(3) { animation-delay: 0.4s, 0.9s; }
-        .loading-text span:nth-child(4) { animation-delay: 0.6s, 1.1s; }
+        @keyframes pulse-text {
+            0% { opacity: 0.4; text-shadow: none; }
+            100% { opacity: 1; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        }
 
         /* ================== 3D 画布 ================== */
         #main-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
@@ -89,7 +117,6 @@
             pointer-events: auto; 
         }
 
-        /* 电脑端菜单排版 */
         .menu { 
             display: grid; 
             grid-template-columns: repeat(2, 140px);
@@ -109,14 +136,13 @@
 
         .menu a:hover { color: #ffd700; transform: scale(1.15); text-shadow: 0 0 15px rgba(255,215,0,0.6); }
 
-        /* 底部署名 */
         #footer {
             position: fixed;
             bottom: 40px;
             width: 100%;
             text-align: center;
-            color: #555;
-            font-size: 18px;
+            color: #444;
+            font-size: 16px;
             letter-spacing: 15px;
             pointer-events: none;
             z-index: 100;
@@ -128,46 +154,41 @@
         @media screen and (max-width: 768px) {
             #ui-layer {
                 flex-direction: row; 
-                align-items: center; /* 让数字菜单垂直居中 */
-                padding-top: 20%; /* 整体稍微往下压一点，避开上面的佛像 */
+                align-items: center; 
+                padding-top: 15%; 
             }
-            #left-zone { flex: 1; display: block; } /* 左边留空给3D文字 */
+            #left-zone { flex: 1; display: block; } 
             #right-zone { 
                 flex: 1; 
                 justify-content: flex-end; 
-                padding-right: 40px; /* 数字距离右侧屏幕边缘的距离 */
+                padding-right: 40px; 
             }
-            
             .menu { 
                 grid-template-columns: repeat(2, 60px); 
-                gap: 40px 30px; /* 加大数字上下的间距，呼吸感更强 */
+                gap: 45px 35px; /* 数字间距拉大，更透气 */
             }
-            
             .menu a { 
-                font-size: 2rem; /* 增大手机端数字字体 */
-                color: #ccc; 
+                font-size: 2rem; 
+                color: #bbb; 
             }
-            
             #footer { 
-                bottom: 30px; /* 署名贴底 */
-                font-size: 12px; 
-                letter-spacing: 8px; 
-                color: #444; /* 颜色再暗一点，不抢戏 */
+                bottom: 25px; 
+                font-size: 11px; 
+                letter-spacing: 10px; 
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- 加载动画 -->
+    <!-- 纯抽象加载动画 -->
     <div id="loading-screen">
-        <div class="loading-text" id="loading-container">
-            <span>正</span>
-            <span>在</span>
-            <span>连</span>
-            <span>接</span>
-            <div id="loading-progress">...</div>
+        <div class="zen-loader">
+            <div class="ring-outer"></div>
+            <div class="ring-inner"></div>
+            <div class="core"></div>
         </div>
+        <div id="loading-progress">0%</div>
     </div>
 
     <!-- 3D 背景 -->
@@ -190,12 +211,12 @@
     <!-- 底部 -->
     <div id="footer">23 影像 曾文翔</div>
 
-    <!-- 优化后的高速 CDN -->
+    <!-- 已经修复的、绝对稳定且兼容的 CDN 路径 -->
     <script type="importmap">
         {
             "imports": {
-                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.module.min.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
@@ -221,7 +242,6 @@
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            // 限制像素比，极大提升手机端渲染帧率
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
             container.appendChild(renderer.domElement);
 
@@ -236,7 +256,7 @@
             const ctx = canvas.getContext('2d');
             canvas.width = 1000; canvas.height = 1000;
             ctx.fillStyle = "#fff";
-            ctx.font = "140px 'Songti SC', 'STSong', serif"; /* 强制使用宋体渲染 */
+            ctx.font = "140px 'Songti SC', 'STSong', serif"; 
             ctx.textAlign = "center";
             
             const startY = 250;
@@ -275,14 +295,13 @@
         }
 
         function loadRandomCenterModel() {
-            // 随机加载 1-4 号模型作为背景（假设你已压缩它们）
             const randomId = Math.floor(Math.random() * 4) + 1; 
             const loader = new PLYLoader();
             
-            // 【注意】这里加了 /models/ 路径，确保能读到文件
             loader.load(`./models/${randomId}.ply`, 
                 (geometry) => {
-                    document.getElementById('loading-progress').innerText = '即将展现...';
+                    // 加载完成时，让数字变成类似 100.00 的形态
+                    document.getElementById('loading-progress').innerText = '100%';
                     
                     setTimeout(() => {
                         geometry.center();
@@ -308,9 +327,9 @@
                         setTimeout(() => { loadingScreen.style.display = 'none'; }, 1500);
 
                         // 佛像先亮起
-                        setTimeout(() => { modelOpacityTarget = 0.8; }, 500);
+                        setTimeout(() => { modelOpacityTarget = 0.85; }, 500);
 
-                        // UI和文字最后亮起，制造层次感
+                        // UI和文字最后亮起
                         setTimeout(() => {
                             textOpacityTarget = 0.9;
                             document.getElementById('ui-layer').style.opacity = '1';
@@ -325,12 +344,12 @@
                         document.getElementById('loading-progress').innerText = percent + '%';
                     } else {
                         const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
-                        document.getElementById('loading-progress').innerText = `已读取 ${mb} MB`;
+                        document.getElementById('loading-progress').innerText = `${mb}MB`;
                     }
                 },
                 (error) => {
                     console.error('模型加载失败:', error);
-                    document.getElementById('loading-progress').innerHTML = `<span style="color:#ff6b6b">云端连接失败，请刷新页面</span>`;
+                    document.getElementById('loading-progress').innerHTML = `<span style="color:#ff4444">ERR</span>`;
                 }
             );
         }
@@ -366,9 +385,8 @@
         }
 
         function render() {
-            if (buddhaPoints) { buddhaPoints.rotation.y += 0.003; } // 旋转放慢一点，更庄重
+            if (buddhaPoints) { buddhaPoints.rotation.y += 0.003; } 
             
-            // 呼吸淡入效果
             if (buddhaMaterial && buddhaMaterial.opacity < modelOpacityTarget) { buddhaMaterial.opacity += 0.005; }
             if (textMaterial && textMaterial.opacity < textOpacityTarget) { textMaterial.opacity += 0.005; }
 
