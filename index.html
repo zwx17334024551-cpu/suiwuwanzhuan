@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>随物宛转</title>
+    <title>随物宛转 - 曾文翔</title>
     <style>
+        /* 引入优雅的宋体作为全局字体 */
         body { 
             margin: 0; 
             background-color: #000; 
             color: #fff; 
             overflow: hidden; 
-            font-family: "SimSun", "STSong", "Songti SC", serif; 
+            font-family: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif; 
             display: flex;
             height: 100vh;
+            width: 100vw;
         }
 
-        /* 加载过渡动画屏 */
+        /* ================== 加载动画层 ================== */
         #loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -24,73 +26,58 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            transition: opacity 1s ease-in-out;
+            transition: opacity 1.5s ease-in-out;
         }
 
         .loading-text {
             display: flex;
             flex-direction: column;
-            gap: 25px;
+            gap: 20px;
             align-items: center;
         }
 
         .loading-text span {
-            font-size: 28px;
+            font-size: 26px;
             color: #fff;
-            letter-spacing: 5px;
+            letter-spacing: 8px;
             opacity: 0;
-            transform: translateY(15px);
-            animation: 
-                appear 0.6s forwards,
-                bob 2s infinite ease-in-out alternate;
+            transform: translateY(10px);
+            animation: appear 0.8s forwards, bob 2.5s infinite ease-in-out alternate;
         }
 
-        /* 修复网络慢时的焦虑：增加直观的进度百分比 */
         #loading-progress {
-            font-size: 16px;
-            color: #ffd700;
-            margin-top: 15px;
+            font-size: 14px;
+            color: #d4af37;
+            margin-top: 20px;
             font-family: Arial, sans-serif;
-            letter-spacing: 2px;
+            letter-spacing: 4px;
             opacity: 0.8;
             height: 20px;
         }
 
-        @keyframes appear {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes appear { to { opacity: 1; transform: translateY(0); } }
         @keyframes bob {
-            0% { transform: translateY(0); color: #888; text-shadow: none; }
-            100% { transform: translateY(-12px); color: #ffd700; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+            0% { transform: translateY(0); color: #666; text-shadow: none; }
+            100% { transform: translateY(-8px); color: #ffd700; text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
         }
 
         .loading-text span:nth-child(1) { animation-delay: 0.0s, 0.5s; }
-        .loading-text span:nth-child(2) { animation-delay: 0.3s, 0.8s; }
-        .loading-text span:nth-child(3) { animation-delay: 0.6s, 1.1s; }
-        .loading-text span:nth-child(4) { animation-delay: 0.9s, 1.4s; }
-        .loading-text span:nth-child(5) { animation-delay: 1.2s, 1.7s; }
+        .loading-text span:nth-child(2) { animation-delay: 0.2s, 0.7s; }
+        .loading-text span:nth-child(3) { animation-delay: 0.4s, 0.9s; }
+        .loading-text span:nth-child(4) { animation-delay: 0.6s, 1.1s; }
 
-        /* 3D全屏背景容器 */
-        #main-canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-        }
+        /* ================== 3D 画布 ================== */
+        #main-canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
 
-        /* UI交互层 */
+        /* ================== UI 交互层 ================== */
         #ui-layer {
             position: relative;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             display: flex;
             z-index: 10;
             pointer-events: none; 
             opacity: 0; 
-            transition: opacity 2s ease-in-out;
+            transition: opacity 3s ease-in-out;
         }
 
         #left-zone { flex: 1.2; }
@@ -102,7 +89,7 @@
             pointer-events: auto; 
         }
 
-        /* 数字菜单 */
+        /* 电脑端菜单排版 */
         .menu { 
             display: grid; 
             grid-template-columns: repeat(2, 140px);
@@ -115,12 +102,12 @@
             color: #aaa; 
             text-decoration: none; 
             font-size: 2.8rem; 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             display: block;
             letter-spacing: 5px;
         }
 
-        .menu a:hover { color: #ffd700; transform: scale(1.1); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .menu a:hover { color: #ffd700; transform: scale(1.15); text-shadow: 0 0 15px rgba(255,215,0,0.6); }
 
         /* 底部署名 */
         #footer {
@@ -128,51 +115,65 @@
             bottom: 40px;
             width: 100%;
             text-align: center;
-            color: #777;
-            font-size: 20px;
-            letter-spacing: 12px;
+            color: #555;
+            font-size: 18px;
+            letter-spacing: 15px;
             pointer-events: none;
             z-index: 100;
             opacity: 0; 
-            transition: opacity 2s ease-in-out;
+            transition: opacity 3s ease-in-out;
         }
 
-        /* ========== 手机端响应式排版优化 ========== */
+        /* ================== 移动端极致美化排版 ================== */
         @media screen and (max-width: 768px) {
             #ui-layer {
-                flex-direction: row; /* 保持左右排版 */
-                align-items: flex-end; /* 内容靠下对齐 */
-                padding-bottom: 90px; /* 给底部留空 */
+                flex-direction: row; 
+                align-items: center; /* 让数字菜单垂直居中 */
+                padding-top: 20%; /* 整体稍微往下压一点，避开上面的佛像 */
             }
-            #left-zone { flex: 1; display: block; }
-            #right-zone { flex: 1; justify-content: flex-end; padding-right: 35px; }
+            #left-zone { flex: 1; display: block; } /* 左边留空给3D文字 */
+            #right-zone { 
+                flex: 1; 
+                justify-content: flex-end; 
+                padding-right: 40px; /* 数字距离右侧屏幕边缘的距离 */
+            }
             
             .menu { 
                 grid-template-columns: repeat(2, 60px); 
-                gap: 25px 25px; 
+                gap: 40px 30px; /* 加大数字上下的间距，呼吸感更强 */
             }
-            .menu a { font-size: 1.7rem; letter-spacing: 2px; }
             
-            #footer { bottom: 25px; font-size: 13px; letter-spacing: 6px; }
+            .menu a { 
+                font-size: 2rem; /* 增大手机端数字字体 */
+                color: #ccc; 
+            }
+            
+            #footer { 
+                bottom: 30px; /* 署名贴底 */
+                font-size: 12px; 
+                letter-spacing: 8px; 
+                color: #444; /* 颜色再暗一点，不抢戏 */
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- 加载动画屏 -->
+    <!-- 加载动画 -->
     <div id="loading-screen">
         <div class="loading-text" id="loading-container">
             <span>正</span>
             <span>在</span>
-            <span>加</span>
-            <span>载</span>
-            <span>中</span>
-            <div id="loading-progress">连接中...</div>
+            <span>连</span>
+            <span>接</span>
+            <div id="loading-progress">...</div>
         </div>
     </div>
 
+    <!-- 3D 背景 -->
     <div id="main-canvas-container"></div>
 
+    <!-- UI 层 -->
     <div id="ui-layer">
         <div id="left-zone"></div>
         <div id="right-zone">
@@ -186,13 +187,15 @@
         </div>
     </div>
 
+    <!-- 底部 -->
     <div id="footer">23 影像 曾文翔</div>
 
+    <!-- 优化后的高速 CDN -->
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.module.min.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
             }
         }
     </script>
@@ -218,7 +221,8 @@
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+            // 限制像素比，极大提升手机端渲染帧率
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
             container.appendChild(renderer.domElement);
 
             createTextParticles();
@@ -232,7 +236,7 @@
             const ctx = canvas.getContext('2d');
             canvas.width = 1000; canvas.height = 1000;
             ctx.fillStyle = "#fff";
-            ctx.font = "140px 'SimSun', 'STSong', serif";
+            ctx.font = "140px 'Songti SC', 'STSong', serif"; /* 强制使用宋体渲染 */
             ctx.textAlign = "center";
             
             const startY = 250;
@@ -271,14 +275,15 @@
         }
 
         function loadRandomCenterModel() {
-            const randomId = Math.floor(Math.random() * 4) + 1; // 随机 1-4 号
+            // 随机加载 1-4 号模型作为背景（假设你已压缩它们）
+            const randomId = Math.floor(Math.random() * 4) + 1; 
             const loader = new PLYLoader();
             
-            loader.load(`./${randomId}.ply`, 
+            // 【注意】这里加了 /models/ 路径，确保能读到文件
+            loader.load(`./models/${randomId}.ply`, 
                 (geometry) => {
                     document.getElementById('loading-progress').innerText = '即将展现...';
                     
-                    // 延迟一点点执行，防止卡顿
                     setTimeout(() => {
                         geometry.center();
                         const box = new THREE.Box3().setFromObject(new THREE.Points(geometry));
@@ -297,72 +302,57 @@
                         scene.add(buddhaPoints);
                         updateResponsiveLayout(); 
                         
-                        // 开始出场动画
+                        // 优雅淡出加载屏
                         const loadingScreen = document.getElementById('loading-screen');
                         loadingScreen.style.opacity = '0';
-                        setTimeout(() => { loadingScreen.style.display = 'none'; }, 1000);
+                        setTimeout(() => { loadingScreen.style.display = 'none'; }, 1500);
 
-                        setTimeout(() => { modelOpacityTarget = 0.9; }, 800);
+                        // 佛像先亮起
+                        setTimeout(() => { modelOpacityTarget = 0.8; }, 500);
 
+                        // UI和文字最后亮起，制造层次感
                         setTimeout(() => {
                             textOpacityTarget = 0.9;
                             document.getElementById('ui-layer').style.opacity = '1';
                             document.getElementById('footer').style.opacity = '1';
-                        }, 2800);
+                        }, 2000);
 
-                        // 安全的静默预加载
-                        safePreloadModels(randomId);
-                    }, 100);
+                    }, 200);
                 },
                 (xhr) => {
-                    // 增加进度条显示，防止手机端因为下载太慢让用户以为卡死了
                     if (xhr.lengthComputable) {
                         const percent = Math.round((xhr.loaded / xhr.total) * 100);
                         document.getElementById('loading-progress').innerText = percent + '%';
                     } else {
                         const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
-                        document.getElementById('loading-progress').innerText = `已加载 ${mb} MB`;
+                        document.getElementById('loading-progress').innerText = `已读取 ${mb} MB`;
                     }
                 },
                 (error) => {
                     console.error('模型加载失败:', error);
-                    document.getElementById('loading-progress').innerHTML = `<span style="color:red">加载失败，请刷新重试</span>`;
+                    document.getElementById('loading-progress').innerHTML = `<span style="color:#ff6b6b">云端连接失败，请刷新页面</span>`;
                 }
             );
-        }
-
-        // 修改为“队列慢速预加载”，彻底解决并发把手机挤崩溃的问题
-        async function safePreloadModels(excludeId) {
-            // 等待开场动画完全放完 (5秒后)，再开始偷摸摸下载
-            await new Promise(r => setTimeout(r, 5000));
-            const preloadList =[1, 2, 3, 4, 6, 7, 8, 9];
-            
-            for (let i of preloadList) {
-                if (i === excludeId) continue;
-                try {
-                    // 每个模型之间休息 2 秒钟，不抢占手机网络通道
-                    await new Promise(r => setTimeout(r, 2000));
-                    await fetch(`./${i}.ply`);
-                } catch(e) {}
-            }
         }
 
         function updateResponsiveLayout() {
             const aspect = window.innerWidth / window.innerHeight;
             
             if (aspect < 1) { 
-                // ======= 手机端竖屏 (更美的左右排版) =======
-                camera.position.z = 24; // 镜头拉远，画面更有留白感
+                // ================= 手机端排版重构 =================
+                camera.position.z = 24; 
                 if (textPoints) {
-                    textPoints.position.set(-4, -2.5, 0); // 居左下
-                    textPoints.scale.set(0.7, 0.7, 0.7); 
+                    // 把“随物宛转”往上提，并放大 1.4倍！视觉效果更震撼
+                    textPoints.position.set(-6, 2, 0); 
+                    textPoints.scale.set(1.4, 1.4, 1.4); 
                 }
                 if (buddhaPoints) {
-                    buddhaPoints.position.set(0, 6, 0); // 佛像往上托起
-                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.15); 
+                    // 佛像往上提一点，避开中间的文字菜单
+                    buddhaPoints.position.set(0, 4.5, 0); 
+                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); 
                 }
             } else { 
-                // ======= 电脑端横屏 =======
+                // ================= 电脑端保持原样 =================
                 camera.position.z = 10; 
                 if (textPoints) {
                     textPoints.position.set(-5, 0, 0); 
@@ -376,7 +366,9 @@
         }
 
         function render() {
-            if (buddhaPoints) { buddhaPoints.rotation.y += 0.005; }
+            if (buddhaPoints) { buddhaPoints.rotation.y += 0.003; } // 旋转放慢一点，更庄重
+            
+            // 呼吸淡入效果
             if (buddhaMaterial && buddhaMaterial.opacity < modelOpacityTarget) { buddhaMaterial.opacity += 0.005; }
             if (textMaterial && textMaterial.opacity < textOpacityTarget) { textMaterial.opacity += 0.005; }
 
