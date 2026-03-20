@@ -378,11 +378,20 @@
 
         function updateResponsiveLayout() {
             const aspect = window.innerWidth / window.innerHeight;
-            if (aspect < 1) { 
+           if (aspect < 1) { 
                 camera.position.z = 24; 
-                if (textPoints) { textPoints.position.set(-6, 2, 0); textPoints.scale.set(1.4, 1.4, 1.4); }
-                if (buddhaPoints) { buddhaPoints.position.set(0, 4.5, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); }
-            } else { 
+                if (textPoints) { 
+                    // 把 -6 改成 -3.5，文字就会往中间靠拢，不再被切断！
+                    // 把 2 改成 5，文字继续往上移，留出呼吸感
+                    textPoints.position.set(-3.5, 5, 0); 
+                    textPoints.scale.set(1.2, 1.2, 1.2); 
+                }
+                if (buddhaPoints) { 
+                    // 把 4.5 改成 7，佛像整体网上提拔，彻底离开下面的数字区域！
+                    buddhaPoints.position.set(0, 7, 0); 
+                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); 
+                }
+            }
                 camera.position.z = 10; 
                 if (textPoints) { textPoints.position.set(-5, 0, 0); textPoints.scale.set(1, 1, 1); }
                 if (buddhaPoints) { buddhaPoints.position.set(0, 0, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale); }
