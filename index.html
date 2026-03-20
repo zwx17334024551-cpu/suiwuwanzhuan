@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>随物宛转</title>
+    <title>随物宛转 - 曾文翔</title>
     <style>
         body { 
             margin: 0; 
@@ -30,7 +30,6 @@
             overflow: hidden;
         }
 
-        /* 背景变色粒子层 */
         #loading-particles {
             position: absolute;
             top: 0; left: 0;
@@ -47,7 +46,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 40px;
-            z-index: 2; /* 确保在粒子之上 */
+            z-index: 2; 
         }
 
         .zen-loader .ring-outer {
@@ -200,8 +199,8 @@
                     y: Math.random() * canvas.height,
                     radius: Math.random() * 2 + 0.5,
                     vx: (Math.random() - 0.5) * 0.5,
-                    vy: Math.random() * -1 - 0.2, // 向上飘动
-                    hue: 40 + Math.random() * 20, // 金色基础色
+                    vy: Math.random() * -1 - 0.2, 
+                    hue: 40 + Math.random() * 20, 
                     life: Math.random()
                 });
             }
@@ -216,12 +215,10 @@
                     p.y += p.vy;
                     p.life += 0.01;
 
-                    // 循环边界
                     if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
                     
-                    // 颜色随时间渐变，产生流光溢彩的禅意感
                     const currentHue = (p.hue + Math.sin(time + p.life) * 30) % 360;
-                    const alpha = Math.abs(Math.sin(p.life * Math.PI)); // 呼吸闪烁
+                    const alpha = Math.abs(Math.sin(p.life * Math.PI)); 
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -236,7 +233,6 @@
             animateParticles();
         }
         initLoadingParticles();
-        // ---------------------------------
 
         init();
 
@@ -300,7 +296,6 @@
             const randomId = Math.floor(Math.random() * 4) + 1; 
             const loader = new PLYLoader();
             
-            // 已修复：去除了 /models/，直接读取根目录文件
             loader.load(`./${randomId}.ply`, 
                 (geometry) => {
                     document.getElementById('loading-progress').innerText = '100%';
@@ -323,7 +318,6 @@
                         scene.add(buddhaPoints);
                         updateResponsiveLayout(); 
                         
-                        // 淡出加载屏并停止粒子动画节省性能
                         const loadingScreen = document.getElementById('loading-screen');
                         loadingScreen.style.opacity = '0';
                         setTimeout(() => { 
@@ -339,7 +333,6 @@
                             document.getElementById('footer').style.opacity = '1';
                         }, 2000);
 
-                        // 恢复你原版的预加载功能！(加入安全延迟，保证主屏流畅)
                         safePreloadModels(randomId);
 
                     }, 200);
@@ -360,16 +353,13 @@
             );
         }
 
-        // ================== 完全恢复你的静默预加载逻辑 ==================
         async function safePreloadModels(excludeId) {
-            // 等待主场景开场动画放完 (5秒后)，再开始偷摸摸下载其他文件，绝不影响体验
             await new Promise(r => setTimeout(r, 5000));
             const preloadList = [1, 2, 3, 4, 6, 7, 8, 9];
             
             for (let i of preloadList) {
                 if (i === excludeId) continue;
                 try {
-                    // 每个模型之间休息 1.5 秒钟，防止并发挤爆手机网络
                     await new Promise(r => setTimeout(r, 1500));
                     await fetch(`./${i}.ply`);
                 } catch(e) {}
@@ -378,20 +368,12 @@
 
         function updateResponsiveLayout() {
             const aspect = window.innerWidth / window.innerHeight;
-           if (aspect < 1) { 
+            if (aspect < 1) { 
+                // ========== 这里是为你重新调好的手机端无重叠坐标 ==========
                 camera.position.z = 24; 
-                if (textPoints) { 
-                    // 把 -6 改成 -3.5，文字就会往中间靠拢，不再被切断！
-                    // 把 2 改成 5，文字继续往上移，留出呼吸感
-                    textPoints.position.set(-3.5, 5, 0); 
-                    textPoints.scale.set(1.2, 1.2, 1.2); 
-                }
-                if (buddhaPoints) { 
-                    // 把 4.5 改成 7，佛像整体网上提拔，彻底离开下面的数字区域！
-                    buddhaPoints.position.set(0, 7, 0); 
-                    buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); 
-                }
-            }
+                if (textPoints) { textPoints.position.set(-3.5, 5, 0); textPoints.scale.set(1.2, 1.2, 1.2); }
+                if (buddhaPoints) { buddhaPoints.position.set(0, 7, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale * 1.1); }
+            } else { 
                 camera.position.z = 10; 
                 if (textPoints) { textPoints.position.set(-5, 0, 0); textPoints.scale.set(1, 1, 1); }
                 if (buddhaPoints) { buddhaPoints.position.set(0, 0, 0); buddhaPoints.scale.setScalar(buddhaPoints.userData.baseScale); }
@@ -410,7 +392,6 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            // 这里也恢复了粒子加载屏的 resize 重绘
             const loadCanvas = document.getElementById('loading-particles');
             if(loadCanvas) { loadCanvas.width = window.innerWidth; loadCanvas.height = window.innerHeight; }
             updateResponsiveLayout();
