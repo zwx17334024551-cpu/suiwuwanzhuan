@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>随物宛转fi</title>
+    <title>随物宛转</title>
     <style>
+        /* 引入更优雅的宋体字族，增加字体的纤细感与高级感 */
         body { 
             margin: 0; 
             background-color: #000; 
             color: #fff; 
             overflow: hidden; 
-            font-family: "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif; 
+            font-family: "Noto Serif SC", "Songti SC", "STSong", "FZFangSong-Z02S", "SimSun", serif; 
             display: flex;
             height: 100vh;
             width: 100vw;
+            -webkit-font-smoothing: antialiased; /* 让字体在苹果设备上更柔和 */
         }
 
         /* ================== 禅意变色粒子加载屏 ================== */
@@ -26,7 +28,7 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            transition: opacity 1.5s ease-in-out;
+            transition: opacity 2s ease-in-out;
             overflow: hidden;
         }
 
@@ -40,12 +42,12 @@
 
         .zen-loader {
             position: relative;
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             z-index: 2; 
         }
 
@@ -53,47 +55,48 @@
             position: absolute;
             width: 100%; height: 100%;
             border-radius: 50%;
-            border: 1.5px dashed rgba(212, 175, 55, 0.4);
-            animation: spin 15s linear infinite;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-top: 1px solid rgba(212, 175, 55, 0.6);
+            animation: spin 8s linear infinite;
         }
 
         .zen-loader .ring-inner {
             position: absolute;
-            width: 65%; height: 65%;
+            width: 60%; height: 60%;
             border-radius: 50%;
-            border: 1px solid transparent;
-            border-top-color: rgba(255, 255, 255, 0.5);
-            border-bottom-color: rgba(212, 175, 55, 0.8);
-            animation: spin-reverse 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-color: rgba(255, 255, 255, 0.5);
+            animation: spin-reverse 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
         .zen-loader .core {
-            width: 8px; height: 8px;
+            width: 6px; height: 6px;
             background-color: #d4af37;
             border-radius: 50%;
-            box-shadow: 0 0 10px #d4af37, 0 0 25px #d4af37;
-            animation: breathe 2.5s ease-in-out infinite alternate;
+            box-shadow: 0 0 15px #d4af37, 0 0 30px #d4af37;
+            animation: breathe 3s ease-in-out infinite alternate;
         }
 
         #loading-progress {
             font-family: 'Courier New', Courier, monospace; 
-            font-size: 14px;
-            color: rgba(212, 175, 55, 0.8);
-            letter-spacing: 6px;
+            font-size: 13px;
+            color: rgba(212, 175, 55, 0.6);
+            letter-spacing: 8px;
             font-weight: 300;
             z-index: 2;
             animation: pulse-text 2s infinite alternate;
+            margin-left: 8px; /* 补偿 letter-spacing 造成的视觉偏移 */
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
         @keyframes breathe {
-            0% { transform: scale(0.5); opacity: 0.4; filter: hue-rotate(0deg); }
-            100% { transform: scale(1.5); opacity: 1; filter: hue-rotate(30deg); box-shadow: 0 0 20px #fff, 0 0 40px #d4af37; }
+            0% { transform: scale(0.8); opacity: 0.3; filter: hue-rotate(0deg); }
+            100% { transform: scale(1.2); opacity: 1; filter: hue-rotate(20deg); box-shadow: 0 0 25px #fff, 0 0 45px #d4af37; }
         }
         @keyframes pulse-text {
-            0% { opacity: 0.4; text-shadow: none; }
-            100% { opacity: 1; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+            0% { opacity: 0.3; }
+            100% { opacity: 0.9; text-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
         }
 
         /* ================== 主画布与 UI 层 ================== */
@@ -107,28 +110,101 @@
             pointer-events: none; 
             opacity: 0; 
             transition: opacity 3s ease-in-out;
+            /* 增加极其微妙的暗角，让文字UI与3D场景剥离，增加纵深感 */
+            background: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%);
         }
 
         #left-zone { flex: 1.2; }
-        #right-zone { flex: 0.8; display: flex; justify-content: center; align-items: center; pointer-events: auto; }
-
-        .menu { display: grid; grid-template-columns: repeat(2, 140px); grid-template-rows: repeat(5, 1fr); gap: 40px 60px; text-align: center; }
-        .menu a { color: #aaa; text-decoration: none; font-size: 2.8rem; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: block; letter-spacing: 5px; }
-        .menu a:hover { color: #ffd700; transform: scale(1.15); text-shadow: 0 0 15px rgba(255,215,0,0.6); }
-
-        #footer {
-            position: fixed; bottom: 40px; width: 100%; text-align: center;
-            color: #444; font-size: 16px; letter-spacing: 15px; pointer-events: none; z-index: 100; opacity: 0; transition: opacity 3s ease-in-out;
+        
+        #right-zone { 
+            flex: 0.8; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            pointer-events: auto; 
         }
 
-        /* ================== 移动端美化排版 ================== */
+        /* 优雅的菜单网格设计 */
+        .menu { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 25px 60px; 
+            text-align: center; 
+            padding-right: 5vw;
+        }
+
+        .menu a { 
+            position: relative;
+            color: rgba(255, 255, 255, 0.5); 
+            text-decoration: none; 
+            font-size: 1.8rem; 
+            padding: 15px 20px;
+            display: block; 
+            letter-spacing: 6px; 
+            font-weight: 300;
+            /* 柔和的动画过渡 */
+            transition: all 0.7s cubic-bezier(0.165, 0.84, 0.44, 1); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* 悬停时的“呼吸感”特效：字间距微微舒展，颜色点亮，轻微上浮 */
+        .menu a:hover { 
+            color: #d4af37; 
+            letter-spacing: 12px; 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            transform: translateY(-3px); 
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5); 
+            background: linear-gradient(to top, rgba(212,175,55,0.05) 0%, transparent 50%);
+        }
+
+        #footer {
+            position: fixed; bottom: 30px; width: 100%; text-align: center;
+            color: rgba(255, 255, 255, 0.3); font-size: 12px; letter-spacing: 12px; 
+            pointer-events: none; z-index: 100; opacity: 0; transition: opacity 3s ease-in-out;
+            font-weight: 300;
+            margin-left: 6px;
+        }
+
+        /* ================== 移动端美化排版 (大师级适配) ================== */
         @media screen and (max-width: 768px) {
-            #ui-layer { flex-direction: row; align-items: center; padding-top: 15%; }
-            #left-zone { flex: 1; display: block; } 
-            #right-zone { flex: 1; justify-content: flex-end; padding-right: 40px; }
-            .menu { grid-template-columns: repeat(2, 60px); gap: 45px 35px; }
-            .menu a { font-size: 2rem; color: #bbb; }
-            #footer { bottom: 25px; font-size: 11px; letter-spacing: 10px; }
+            #ui-layer { 
+                flex-direction: column; /* 改为垂直排布 */
+                justify-content: flex-end; /* 将 UI 压到屏幕下方，避开上方的 3D 模型 */
+                padding-bottom: 15vh; /* 距离底部留白 */
+                background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 60%); /* 底部文字防挡遮罩 */
+            }
+            #left-zone { display: none; /* 手机端不需要左侧占位区，3D本身就在中上 */ } 
+            
+            #right-zone { 
+                flex: none; 
+                width: 100%; 
+                justify-content: center; 
+                padding: 0; 
+            }
+
+            .menu { 
+                grid-template-columns: repeat(5, 1fr); /* 手机端改为一行5个，或两行交错 */
+                gap: 15px 10px; 
+                width: 90%;
+                padding-right: 0;
+            }
+
+            .menu a { 
+                font-size: 1.3rem; 
+                padding: 10px 0; 
+                letter-spacing: 2px;
+                border-bottom: none; /* 手机端去掉下划线，保持极简 */
+                color: rgba(255, 255, 255, 0.65);
+            }
+
+            /* 手机端触摸反馈 */
+            .menu a:active {
+                color: #d4af37;
+                text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+                transform: scale(0.95);
+            }
+
+            #footer { bottom: 20px; font-size: 10px; letter-spacing: 8px; color: rgba(255, 255, 255, 0.2); }
         }
     </style>
 </head>
@@ -163,7 +239,7 @@
     </div>
 
     <!-- 底部 -->
-    <div id="footer">23 影像 曾文翔</div>
+    <div id="footer">--</div>
 
     <script type="importmap">
         {
